@@ -243,7 +243,7 @@ def f(data, query, ref, width):
         approach = nodes[current][2]
         if approach == 1:
             if current - prev >= 30:
-                path.append((prev, current - 1, nodes[current][3], nodes[current][4]))
+                path.append((int(prev), int(current), int(nodes[current][3]), int(nodes[current][4] + 1)))
             count += current - prev
         current = prev
         prev = nodes[current][1]
