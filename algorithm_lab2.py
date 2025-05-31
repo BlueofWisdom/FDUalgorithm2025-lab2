@@ -175,30 +175,95 @@ def extend(data,ref, query):
 
 
 
-def connect(dict, width = 9):
-    newdict = {}
-    for key in dict:
-        index = 0
-        while(index < len(dict[key])):
-            if key in newdict:
-                newdict[key].append(dict[key][index])
-            else:
-                newdict[key] = [dict[key][index]]
-            iloc, refloc, to, size = dict[key][index]
+# def connect(dict, width = 9):
+#     newdict = {}
+#     for key in dict:
+#         index = 0
+#         while(index < len(dict[key])):
+#             if key in newdict:
+#                 newdict[key].append(dict[key][index])
+#             else:
+#                 newdict[key] = [dict[key][index]]
+#             iloc, refloc, to, size = dict[key][index]
+#             iend = iloc + size - 1
+            
+#             for j in range(1, width, 1):
+#                 if iend + j in dict:
+#                     for next in dict[iend + j]:
+#                         niloc, nrloc, nto, nsize = next
+#                         if nto == to:
+#                             if to == 1 and nrloc > refloc + size - 1 - width and nrloc < refloc + size - 1 + width:
+#                                 dict[key].append((iloc, refloc, to, nrloc + nsize - refloc))
+#                             elif to == -1 and nrloc + nsize - 1 < refloc + width and nrloc + nsize - 1 > refloc - width:
+#                                 dict[key].append((iloc, nrloc, to, refloc + size - nrloc))
+
+#             index += 1
+#     return newdict
+
+
+
+from collections import deque
+
+def connect(dict_data, width=9):
+    # 分离原始数据（防止修改原始输入）
+    base_dict = {k: list(v) for k, v in dict_data.items()}
+    # 存储最终结果（包含原始+新生成片段）
+    result_dict = {}
+    
+    for key in base_dict:
+        # 使用队列实现BFS
+        queue = deque(base_dict[key])
+        # 记录已处理片段（防止重复）
+        seen = set()
+        # 存储当前key的所有有效片段
+        segments = []
+        
+        while queue:
+            seg = queue.popleft()
+            # 跳过已处理片段
+            if seg in seen:
+                continue
+            seen.add(seg)
+            segments.append(seg)
+            
+            iloc, refloc, to, size = seg
             iend = iloc + size - 1
             
-            for j in range(1, width, 1):
-                if iend + j in dict:
-                    for next in dict[iend + j]:
-                        niloc, nrloc, nto, nsize = next
-                        if nto == to:
-                            if to == 1 and nrloc > refloc + size - 1 - width and nrloc < refloc + size - 1 + width:
-                                dict[key].append((iloc, refloc, to, nrloc + nsize - refloc))
-                            elif to == -1 and nrloc + nsize - 1 < refloc + width and nrloc + nsize - 1 > refloc - width:
-                                dict[key].append((iloc, nrloc, to, refloc + size - nrloc))
-
-            index += 1
-    return newdict
+            # 预计算有效范围
+            search_start = iend - width
+            search_end = iend + width
+            
+            # 在范围内查找可连接片段
+            for next_pos in range(search_start, search_end):
+                if next_pos not in base_dict:
+                    continue
+                    
+                for next_seg in base_dict[next_pos]:
+                    niloc, nrloc, nto, nsize = next_seg
+                    # 方向必须相同
+                    if nto != to:
+                        continue
+                    
+                    # 计算位置关系
+                    if to == 1:  # 正向连接
+                        ref_end = refloc + size - 1
+                        if (ref_end - width < nrloc < ref_end + width):
+                            new_size = nrloc + nsize - refloc
+                            new_seg = (iloc, refloc, to, new_size)
+                            if new_seg not in seen:
+                                queue.append(new_seg)
+                    
+                    elif to == -1:  # 反向连接
+                        ref_start = refloc - size + 1
+                        if (ref_start - width < nrloc + nsize - 1 < ref_start + width):
+                            new_size = refloc - nrloc + size
+                            new_seg = (iloc, nrloc, to, new_size)
+                            if new_seg not in seen:
+                                queue.append(new_seg)
+        
+        result_dict[key] = segments
+    
+    return result_dict
 
 
 
@@ -248,6 +313,7 @@ def f(data, query, ref, width):
         current = prev
         prev = nodes[current][1]
     path.reverse() 
+    print(path)
     return path
 
 
